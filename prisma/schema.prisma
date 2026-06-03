@@ -1,0 +1,149 @@
+// This is your Prisma schema file,
+// learn more about it in our docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  name      String   @db.VarChar(100)
+  email     String   @db.VarChar(255)
+  password  String   @db.VarChar(255)
+  role      Role     @default(CUSTOMER)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  orders        Order[]
+  activityLogs  ActivityLog[]
+  notifications Notification[]
+
+  @@unique([email])
+  @@index([email], name: "idx_users_email")
+  @@index([role], name: "idx_users_role")
+  @@map("users")
+}
+
+enum Role {
+  ADMIN
+  CUSTOMER
+}
+
+model Product {
+  id          String    @id @default(uuid())
+  name        String    @db.VarChar(255)
+  description String?   @db.Text
+  price       Decimal   @db.Decimal(12, 2)
+  stock       Int       @default(0)
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+
+  orderItems OrderItem[]
+
+  @@index([name], name: "idx_products_name")
+  @@index([deletedAt], name: "idx_products_deleted")
+  @@index([price], name: "idx_products_price")
+  @@map("products")
+}
+
+model Order {
+  id          String      @id @default(uuid())
+  userId      String      @map("user_id")
+  totalAmount Decimal     @db.Decimal(12, 2)
+  status      OrderStatus @default(PENDING)
+  createdAt   DateTime    @default(now()) @map("created_at")
+  updatedAt   DateTime    @updatedAt @map("updated_at")
+
+  user          User          @relation(fields: [userId], references: [id])
+  items         OrderItem[]
+  activityLogs  ActivityLog[]
+  notifications Notification[]
+
+  @@index([userId], name: "idx_orders_user_id")
+  @@index([status], name: "idx_orders_status")
+  @@index([createdAt], name: "idx_orders_created")
+  @@map("orders")
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  CANCELLED
+}
+
+enum ActivityType {
+  ORDER_INVOICE
+  ORDER_NOTIFICATION
+  ORDER_LOG
+}
+
+enum ActivityStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+enum NotificationType {
+  ORDER_CREATED
+  ORDER_UPDATED
+}
+
+model OrderItem {
+  id        String  @id @default(uuid())
+  orderId   String  @map("order_id")
+  productId String  @map("product_id")
+  quantity  Int
+  price     Decimal @db.Decimal(12, 2)
+
+  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id])
+
+  @@index([orderId], name: "idx_order_items_order_id")
+  @@index([productId], name: "idx_order_items_product")
+  @@map("order_items")
+}
+
+model ActivityLog {
+  id           String          @id @default(uuid())
+  eventId      String          @unique @map("event_id")
+  orderId      String?         @map("order_id")
+  userId       String?         @map("user_id")
+  type         ActivityType
+  status       ActivityStatus  @default(PENDING)
+  payload      Json
+  errorMessage String?         @db.Text @map("error_message")
+  retries      Int             @default(0)
+  createdAt    DateTime        @default(now()) @map("created_at")
+  processedAt  DateTime?       @map("processed_at")
+
+  order Order? @relation(fields: [orderId], references: [id])
+  user  User?  @relation(fields: [userId], references: [id])
+
+  @@index([orderId], name: "idx_activity_log_order_id")
+  @@index([status], name: "idx_activity_log_status")
+  @@map("activity_logs")
+}
+
+model Notification {
+  id          String            @id @default(uuid())
+  userId      String            @map("user_id")
+  orderId     String            @map("order_id")
+  type        NotificationType
+  message     String            @db.Text
+  delivered   Boolean           @default(false)
+  createdAt   DateTime          @default(now()) @map("created_at")
+  deliveredAt DateTime?         @map("delivered_at")
+
+  user  User  @relation(fields: [userId], references: [id])
+  order Order @relation(fields: [orderId], references: [id])
+
+  @@index([userId], name: "idx_notifications_user_id")
+  @@map("notifications")
+}
