@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # Backend Technical Test API
 
 Production-ready backend dengan Express.js, PostgreSQL, Prisma ORM, dan JWT Authentication.
@@ -128,15 +127,6 @@ docker-compose down -v
 
 ---
 
-## 📘 Additional Documentation
-
-- [Architecture](docs/ARCHITECTURE.md)
-- [Async Processing](docs/ASYNC_PROCESSING.md)
-- [Database ERD](docs/ERD.md)
-- [Testing Strategy](docs/TESTING.md)
-
----
-
 ## 🧪 Test Credentials
 
 | Role | Email | Password |
@@ -156,6 +146,3 @@ docker-compose down -v
 | `npm run prisma:generate` | Generate Prisma client |
 | `npm run prisma:migrate` | Run database migrations |
 | `npm run prisma:seed` | Seed database |
-=======
-# Backend-API
->>>>>>> 6d36c5ef246638c6eb9572092c89532b1f34fac2
